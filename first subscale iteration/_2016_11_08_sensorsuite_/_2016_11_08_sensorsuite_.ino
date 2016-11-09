@@ -103,11 +103,13 @@ void displaySensorDetails(void)
 
 void setup() {
   // put your setup code here, to run once:
-  initSensors();
 
   SD.begin(chipselect);
 
   data01 = SD.open("data01.txt", FILE_WRITE);
+    initSensors();
+
+   data01.close();
   
 }
 
@@ -116,12 +118,15 @@ void loop() {
   sensors_event_t event;
  //
 
-  getpitchrollheading();
+  //getpitchrollheading();
   get_accel_mag_gyro_alt();
 
   delay(100);
-
- 
+  /*count++;
+ if(count > 1000000)
+ {
+  data01.close();
+ }*/
 }
 
 void getpitchrollheading() {
@@ -133,7 +138,10 @@ void getpitchrollheading() {
   /* Read the accelerometer and magnetometer */
   accel.getEvent(&accel_event);
   mag.getEvent(&mag_event);
+ data01 = SD.open("data01.txt", FILE_WRITE);
 
+  // if the file is available, write to it:
+  if (data01) {
   /* Use the new fusionGetOrientation function to merge accel/mag data */  
   if (dof.fusionGetOrientation(&accel_event, &mag_event, &orientation))
   {
@@ -147,33 +155,21 @@ void getpitchrollheading() {
     data01.println(F(""));
   }
 
-  /* Previous code removed handling accel and mag data separately */
-  //  /* Calculate pitch and roll from the raw accelerometer data */
-  //  data01.print(F("Orientation: "));
-  //  accel.getEvent(&accel_event);
-  //  if (dof.accelGetOrientation(&accel_event, &orientation))
-  //  {
-  //    /* 'orientation' should have valid .roll and .pitch fields */
-  //    data01.print(orientation.roll);
-  //    data01.print(F(" "));
-  //    data01.print(orientation.pitch);
-  //    data01.print(F(" "));
-  //  }
-  //  
-  //  /* Calculate the heading using the magnetometer */
-  //  mag.getEvent(&mag_event);
-  //  if (dof.magGetOrientation(SENSOR_AXIS_Z, &mag_event, &orientation))
-  //  {
-  //    /* 'orientation' should have valid .heading data now */
-  //    data01.print(orientation.heading);
-  //  }
-  //  data01.println(F(""));
+      data01.close();
+
+  }
+  else {
+        Serial.println("error opening data01.txt");
+  }
 }
-}
+
 
 void get_accel_mag_gyro_alt() {
  sensors_event_t event;
-   
+    data01 = SD.open("data01.txt", FILE_WRITE);
+
+  // if the file is available, write to it:
+  if (data01) {
   /* Display the results (acceleration is measured in m/s^2) */
   accel.getEvent(&event);
   data01.print(F("ACCEL "));
@@ -215,6 +211,10 @@ void get_accel_mag_gyro_alt() {
                                         event.pressure,
                                         temperature)); 
     data01.println(F(" m"));
+  }
+  }
+    else {
+        Serial.println("error opening data01.txt");
   }
 }
 
