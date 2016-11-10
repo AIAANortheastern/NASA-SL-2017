@@ -36,7 +36,7 @@ const int sdCardCS = 10;
 // Generate Random File Name for log file
 // Need to adjust to generate sequential files later
 
-String current_csv_name = ("meme.csv");
+String current_csv_name = get_csv_name();
 
 File csvFile;
 
@@ -145,4 +145,19 @@ String genSensorOutput(){
 
 }
 
+
+String get_csv_name() {
+  String newname = "memery";
+  int count = 1;
+  String testname = "";
+  testname = newname + (String)(count) + ".csv";
+  
+  while(SD.exists(testname))
+  {
+    count++;
+    testname = newname + (String)(count) + ".csv";
+  }
+  
+  return testname;
+}
 
