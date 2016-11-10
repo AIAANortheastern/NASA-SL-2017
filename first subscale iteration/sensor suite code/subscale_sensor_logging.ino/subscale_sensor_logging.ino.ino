@@ -36,12 +36,29 @@ const int sdCardCS = 10;
 // Generate Random File Name for log file
 // Need to adjust to generate sequential files later
 
+String get_csv_name() {
+  String newname = "memery";
+  int count = 1;
+  String testname = "";
+  testname = newname + (String)(count) + ".csv";
+  
+  while(SD.exists(testname))
+  {
+    count++;
+    testname = newname + (String)(count) + ".csv";
+  }
+  
+  return testname;
+}
+
 String current_csv_name = get_csv_name();
 
 File csvFile;
 
 void setup() {
   Serial.begin(9600);
+  //current_csv_name = get_csv_name();
+  Serial.println(get_csv_name());
   while (!Serial) {
     ; // wait for serial port to connect. Needed for native USB port only
   }
@@ -146,18 +163,4 @@ String genSensorOutput(){
 }
 
 
-String get_csv_name() {
-  String newname = "memery";
-  int count = 1;
-  String testname = "";
-  testname = newname + (String)(count) + ".csv";
-  
-  while(SD.exists(testname))
-  {
-    count++;
-    testname = newname + (String)(count) + ".csv";
-  }
-  
-  return testname;
-}
 
