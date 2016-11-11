@@ -36,52 +36,54 @@ const int sdCardCS = 10;
 // Generate Random File Name for log file
 // Need to adjust to generate sequential files later
 
+bool firstFlag = true;
 String current_csv_name;
 
-File csvFile;
-
 void setup() {
+    randomSeed((analogRead(3)) * (analogRead(4)) - (analogRead(5)));
+    current_csv_name = String(random(0,100000)) + ".csv";
     
-    Serial.begin(9600);
+    //Serial.begin(115200);
 
-    while (!Serial) {
+    /*while (!Serial) {
         ; // wait for serial port to connect. Needed for native USB port only
-    }
+    }*/
 
     if (!SD.begin(sdCardCS)) {
-        Serial.println("initialization failed!");
+        //Serial.println("failed!");
         return;
     }
-    Serial.println("initialization done.");
+    //Serial.println("done.");
 
     /* Initialise the sensors */
     if(!accel.begin())
     {
         /* There was a problem detecting the ADXL345 ... check your connections */
-        Serial.println(F("Ooops, no LSM303 detected ... Check your wiring!"));
+        //Serial.println(F("Ooops, no LSM303 detected ... Check your wiring!"));
         while(1);
     }
     if(!mag.begin())
     {
         /* There was a problem detecting the LSM303 ... check your connections */
-        Serial.println("Ooops, no LSM303 detected ... Check your wiring!");
+        //Serial.println("Ooops, no LSM303 detected ... Check your wiring!");
         while(1);
     }
     if(!bmp.begin())
     {
         /* There was a problem detecting the BMP085 ... check your connections */
-        Serial.print("Ooops, no BMP085 detected ... Check your wiring or I2C ADDR!");
+        //Serial.print("Ooops, no BMP085 detected ... Check your wiring or I2C ADDR!");
         while(1);
     }
     if(!gyro.begin())
     {
         /* There was a problem detecting the L3GD20 ... check your connections */
-        Serial.print("Ooops, no L3GD20 detected ... Check your wiring or I2C ADDR!");
+        //Serial.print("Ooops, no L3GD20 detected ... Check your wiring or I2C ADDR!");
         while(1);
     }
 
+    
     /* Assign a name to the csv file being exported to the SD card, making note to avoid
-       overwriting existing data entries */
+       overwriting existing data entries 
 
     String outname = "subscale_launch_1_results_trial_";
     int trialNum = 1;
@@ -94,18 +96,19 @@ void setup() {
             current_csv_name = outname + String(trialNum) + ".csv";
             break;
         }
-    }
+    } */
 
-    /* Add headers to the first line of the file so a user knows what is in each collum */
+    /* Add headers to the first line of the file so a user knows what is in each collum 
     File csvFile = SD.open(current_csv_name, FILE_WRITE);
 
     if(csvFile){
-    	csvFile.println("millis From Start, Accel X (m/s^2), Accel Y (m/s^2), Accel Z (m/s^2), 
-    					Mag Vector X (uT), Mag Vector Y (uT), Mag Vector Z (uT), 
-    					Gyro X (rad/s), Gyro Y (rad/s), Gyro Z (rad/s), 
-    					Atmospheric Pressure (hPa), Temp (C), Estimated altitude (m)");
-    	csvFile.close();
-    }
+      csvFile.println("millis From Start, Accel X (m/s^2), Accel Y (m/s^2), Accel Z (m/s^2), 
+              Mag Vector X (uT), Mag Vector Y (uT), Mag Vector Z (uT), 
+              Gyro X (rad/s), Gyro Y (rad/s), Gyro Z (rad/s), 
+              Atmospheric Pressure (hPa), Temp (C), Estimated altitude (m)");
+      csvFile.close();
+    }*/
+    
 }
 
 void loop() {
@@ -118,7 +121,8 @@ void loop() {
         csvFile.close();
     }
 
-    Serial.println(outline);
+    //Serial.println(current_csv_name);
+    //Serial.println(outline);
 
     delay(100);
 }
