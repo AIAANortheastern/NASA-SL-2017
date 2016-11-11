@@ -7,8 +7,8 @@
 #include <SPI.h>
 #include <SD.h>
 
-/*****************************************************************************************
-* This routine is designed to collect various sensor outputs from a 10DOF sensor
+/******************************************************************************************
+* This routine is designed to collect various sensor outputs from a 10DOF sensor           
 * integrated into the subscale. This is accomplished by collecting outputs from each
 * available sensor at 100 ms intervals, and outputting the data line my line in a CSV
 * format compliant file. Ideally output should be importable into any program that handles
@@ -94,6 +94,17 @@ void setup() {
             current_csv_name = outname + String(trialNum) + ".csv";
             break;
         }
+    }
+
+    /* Add headers to the first line of the file so a user knows what is in each collum */
+    File csvFile = SD.open(current_csv_name, FILE_WRITE);
+
+    if(csvFile){
+    	csvFile.println("millis From Start, Accel X (m/s^2), Accel Y (m/s^2), Accel Z (m/s^2), 
+    					Mag Vector X (uT), Mag Vector Y (uT), Mag Vector Z (uT), 
+    					Gyro X (rad/s), Gyro Y (rad/s), Gyro Z (rad/s), 
+    					Atmospheric Pressure (hPa), Temp (C), Estimated altitude (m)");
+    	csvFile.close();
     }
 }
 
