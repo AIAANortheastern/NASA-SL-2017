@@ -1,0 +1,1 @@
+Projects in this folder are "deployed" releases in launches, canceled or completed. This directory serves to clearly capture the state the program was in at the time of deployment
