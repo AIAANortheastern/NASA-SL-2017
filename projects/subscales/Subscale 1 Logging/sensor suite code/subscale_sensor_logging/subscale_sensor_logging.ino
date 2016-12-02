@@ -124,7 +124,7 @@ void loop() {
     //Serial.println(current_csv_name);
     //Serial.println(outline);
 
-    delay(100);
+    delay(1);
 }
 
 // REFORMAT
