@@ -1,0 +1,5 @@
+freetype-py
+pypng
+matplotlib
+pytest
+pyserial
