@@ -78,7 +78,7 @@ void loop()
 
   digitalWrite(SSD,HIGH);
 
-  delay(500);
+  // delay(500);
 }
 
 // Read the accelerometer data and put values into global variables
@@ -92,7 +92,7 @@ void readVal()
   byte b0 = 0x0; // an empty byte, to increment to subsequent registers
 
   digitalWrite(SS, LOW); // SS must be LOW to communicate
-  delay(1);
+  //  delay(1);
   SPI.transfer(dataByte); // request a read, starting at X low byte
   byte xL = SPI.transfer(b0); // get the low byte of X data
   byte xH = SPI.transfer(b0); // get the high byte of X data
@@ -100,7 +100,7 @@ void readVal()
   byte yH = SPI.transfer(b0); // get the high byte of Y data
   byte zL = SPI.transfer(b0); // get the low byte of Z data
   byte zH = SPI.transfer(b0); // get the high byte of Z data
-  delay(1);
+  //  delay(1);
   digitalWrite(SS, HIGH);
 
   // shift the high byte left 8 bits and merge the high and low
