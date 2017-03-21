@@ -15,6 +15,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <SD.h>
+#include <SoftwareSerial.h>
 
 #define SS    10   // Serial Select -> CS on LIS331
 #define MOSI  11   // MasterOutSlaveIn -> SDI
@@ -31,9 +32,14 @@ double xAcc, yAcc, zAcc;
 // Global File object for SD writing
 File logFile;
 
+// Global SoftwareSerial object for Xbee communication
+SoftwareSerial xbee(2,3); // RX, TX
+
+
 void setup()
 {
-  Serial.begin(9600);
+  // Configure Serial output (for debugging)
+  Serial.begin(115200);
 
   // Configure SD
   SD_SETUP();
@@ -43,6 +49,9 @@ void setup()
 
   // Configure accelerometer
   Accelerometer_Setup();
+
+  // Configure Xbee SoftwareSerial port
+  xbee.begin(9600);
 }
 
 
@@ -74,6 +83,15 @@ void loop()
     logFile.println(zAcc, 1);
     logFile.close();
   }
+
+  // Output to Xbee
+	xbee.print(millis(), DEC);
+  xbee.print(",");
+  xbee.print(xAcc, DEC);
+  xbee.print(",");
+  xbee.print(yAcc, DEC);
+  xbee.print(",");
+  xbee.println(zAcc, DEC);
 
   digitalWrite(SSD,HIGH);
 
