@@ -74,7 +74,7 @@ class LivePlot:
                     return
                 self.add_data(*new_data)
                 f.write(str(new_data).replace("(", "\n").replace(")", " ").strip(" "))
-                #time.sleep(1 / 60.0)
+                # time.sleep(1 / 60.0)
         except (KeyboardInterrupt, SystemExit):
             f.close()
             return
@@ -101,10 +101,10 @@ class LivePlot:
         atexit.register(_kill_thread)
 
         plt.ion()
-        line_1, = self._axis_1.plot(list(self.y_data), list(self.x_data), 'r*')
+        line_1, = self._axis_1.plot(list(self.x_data), list(self.x_data), 'r*')
         line_2, = self._axis_2.plot(list(self.y_data), list(self.x_data), 'b-')
-        line_3, = self._axis_1.plot(list(self.y_data), list(self.x_data), 'r*')
-        line_4, = self._axis_2.plot(list(self.y_data), list(self.x_data), 'b-')
+        line_3, = self._axis_1.plot(list(self.z_data), list(self.x_data), 'r*')
+        line_4, = self._axis_2.plot(list(self.a_data), list(self.x_data), 'b-')
 
         while True:
             try:
@@ -114,17 +114,17 @@ class LivePlot:
 
                 line_2.set_ydata([a for a in list(self.y_data)])
                 self._axis_2.clear()
-                self._axis_2.plot(range(len(self.y_data)), list(self.y_data), 'b-')
+                self._axis_2.plot(list(self.x_data), list(self.y_data), 'b-')
 
                 line_3.set_ydata([a for a in list(self.z_data)])
                 self._axis_3.clear()
-                self._axis_3.plot(range(len(self.z_data)), list(self.z_data), 'g-')
+                self._axis_3.plot(list(self.x_data), list(self.z_data), 'g-')
 
                 line_4.set_ydata([a for a in list(self.a_data)])
                 self._axis_4.clear()
-                self._axis_4.plot(range(len(self.a_data)), list(self.a_data), 'r-')
+                self._axis_4.plot(list(self.x_data), list(self.a_data), 'r-')
 
-                plt.pause(1.0 / 30.0)
+                plt.pause(1.0 / 60.0)
             except (KeyboardInterrupt, SystemExit, Exception) as e:
                 shutdown_event.set()
                 raise e
@@ -139,14 +139,15 @@ def establish_serial(baud_rate=None, serial_path=None):
             baud_rate = None
             print("Entered baud rate was not a number, please try again")
 
-    ports = list_ports.comports()
-    choices = {}
-    for i, p in enumerate(ports):
-        print(i, end='\t')
-        print(p)
-        choices[i] = p
-    choice = input("Which port: ")
-    serial_path = str(choices[int(choice)]).split(' ')[0]
+    if not serial_path:
+        ports = list_ports.comports()
+        choices = {}
+        for i, p in enumerate(ports):
+            print(i, end='\t')
+            print(p)
+            choices[i] = p
+        choice = input("Which port: ")
+        serial_path = str(choices[int(choice)]).split(' ')[0]
 
     return BeeConnection(serial_path, baud_rate)
 
@@ -280,7 +281,7 @@ class BeeConnection:
             time.sleep(0.5)
 
         self.raw_data = collections.deque()
-        self._parser = Parser()
+        self._parser = Parser(num_data=6)
 
     def close(self):
         '''
@@ -315,7 +316,6 @@ class BeeConnection:
                     new_data = self._connection.read()
                     for char in new_data:
                         char = bytes([char])
-
                         self._parser.feed(char)
 
                         if self._parser.state == ParserStates.ERROR_STATE:
@@ -332,12 +332,8 @@ class BeeConnection:
 
 if __name__ == '__main__':
     conn = establish_serial(9600)
-    print(conn)
     plot = LivePlot(conn)
     plot.plot_forever()
-    for dat in conn:
-        print(dat)
-
 
 
 ###################################################################################
