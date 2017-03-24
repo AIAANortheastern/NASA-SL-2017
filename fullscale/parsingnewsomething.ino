@@ -114,6 +114,8 @@ void setup()
   // loop code a heck of a lot easier!
   useInterrupt(true);
 
+
+  // random
   delay(1000);
   // Ask for firmware version
   mySerial.println(PMTK_Q_RELEASE);
