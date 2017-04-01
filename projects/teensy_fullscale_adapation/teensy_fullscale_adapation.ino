@@ -1,14 +1,18 @@
 
 /* Wiring:
-  UNO     LIS331    SD BREAKOUT
-  5.0V    ---       <5V
-  3.3V    VCC       ---
-  GND     GND       GND
-  9   	  ---       <CS
-  10      CS        ---
-  11      SDA/SDI   <DI
-  12      SA0/SDO   >DO
-  13      SCL/SPC   <CLK
+  UNO     LIS331     SD Breakout    XBee    GPS
+  5.0V    ---        <5V            ---     ---
+  3.3V    VCC        ---            ---     ---
+  GND     GND        GND            ---     ---
+  9   	  ---        <CS            ---     ---
+  10      CS         ---            ---     ---
+  11      SDA/SDI    <DI            ---     ---
+  12      SA0/SDO    >DO            ---     ---
+  13      SCL/SPC    <CLK           ---     ---
+  2       ---        ---            RX      ---
+  3       ---        ---            ---     ---
+  5       ---        ---            ---     TX
+  6       ---        ---            ---     RX
 */
 
 #include <SPI.h>
@@ -16,12 +20,16 @@
 #include <stdio.h>
 #include <SD.h>
 #include <SoftwareSerial.h>
+#include <Adafruit_GPS.h>
 
 #define SSD    9   // Serial Select     -> CS   SD Breakout
 #define SS    10   // Serial Select 	  -> CS 	on LIS331
 #define MOSI  11   // MasterOutSlaveIn 	-> SDI  on Both
 #define MISO  12   // MasterInSlaveOut 	-> SDO  on Both
 #define SCK   13   // Serial Clock 		  -> SPC 	on Both
+
+// 'true' if you want to debug and listen to raw GPS sentances, else false
+#define GPSECHO  true
 
 #define SCALE 0.0007324; // approximate scale factor for full range (+/-24g)
 // scale factor: +/-24g = 48G range. 2^16 bits. 48/65536 = 0.0007324
@@ -32,9 +40,14 @@ double xAcc, yAcc, zAcc;
 // Global File object for SD writing
 File logFile;
 
-// Global SoftwareSerial object for Xbee communication
+// Global SoftwareSerial object for Xbee and GPS communication
 SoftwareSerial xbee(2,3); // RX, TX
+SoftwareSerial gps(5, 6); // TX, RX
 
+// GPS object
+Adafruit_GPS GPS(&gps);
+boolean usingInterrupt = false; // For GPS only
+void useInterrupt(boolean); // Func prototype keeps Arduino 0023 happy
 
 void setup()
 {
@@ -48,29 +61,67 @@ void setup()
   SPI_SETUP();
 
   // Configure accelerometer
-  Accelerometer_Setup();
+  Accelerometer_SETUP();
+
+  // Configure GPS
+  GPS_SETUP();
 
   // Configure Xbee SoftwareSerial port
   xbee.begin(9600);
 }
 
+// Interrupt is called once a millisecond, looks for any new GPS data, and stores it
+SIGNAL(TIMER0_COMPA_vect) {
+  char c = GPS.read();
+  // if you want to debug, this is a good time to do it!
+  #ifdef UDR0
+    if (GPSECHO)
+      if (c) UDR0 = c;  
+         // writing direct to UDR0 is much much faster than Serial.print 
+        // but only one character can be written at a time. 
+  #endif
+}
+
+void useInterrupt(boolean v) {
+  if (v) {
+    // Timer0 is already used for millis() - we'll just interrupt somewhere
+    // in the middle and call the "Compare A" function above
+    OCR0A = 0xAF;
+    TIMSK0 |= _BV(OCIE0A);
+    usingInterrupt = true;
+  } else {
+    // do not call the interrupt function COMPA anymore
+    TIMSK0 &= ~_BV(OCIE0A);
+    usingInterrupt = false;
+  }
+}
+
+uint32_t timer = millis();
+
 
 void loop()
 {
-  readVal(); // get acc values and put into global variables
+  readAccelVal(); // get acc values and put into global variables
 
+  redGPSVal(); // Get GPS data, need to implement
+
+  // outputSerial();
+
+  outputSD();
+
+  outputXbee();
+}
+
+void outputSerial(){
   // Output values to serial
-  Serial.print(millis(), 1);
-  Serial.print(",");
   Serial.print(xAcc, 1);
   Serial.print(",");
   Serial.print(yAcc, 1);
   Serial.print(",");
   Serial.println(zAcc, 1);
+}
 
-  //Output Values to SD
-
-  /*
+void outputSD(){
   logFile = SD.open("log.csv", FILE_WRITE);
 
   if (logFile) {
@@ -83,7 +134,9 @@ void loop()
     logFile.println(zAcc, 1);
     logFile.close();
   }
+}
 
+void outputXbee(){
   // Output to Xbee
   xbee.print(millis(), DEC);
   xbee.print(",");
@@ -92,12 +145,10 @@ void loop()
   xbee.print(yAcc, DEC);
   xbee.print(",");
   xbee.println(zAcc, DEC);
-
-  */
 }
 
 // Read the accelerometer data and put values into global variables
-void readVal()
+void readAccelVal()
 {
   byte xAddressByteL = 0x28; // Low Byte of X value (the first data register)
   byte readBit = B10000000; // bit 0 (MSB) HIGH means read register
@@ -176,7 +227,7 @@ void SPI_SETUP()
   SPI.setClockDivider(SPI_CLOCK_DIV16); // SPI clock 1000Hz
 }
 
-void Accelerometer_Setup()
+void Accelerometer_SETUP()
 {
   // Set up the accelerometer
   // write to Control register 1: address 20h
@@ -264,3 +315,31 @@ void SD_SETUP() {
   digitalWrite(SSD, HIGH);
 }
 
+void GPS_SETUP() {
+  // 9600 NMEA is the default baud rate for Adafruit MTK GPS's- some use 4800
+  GPS.begin(9600);
+
+  // uncomment this line to turn on RMC (recommended minimum) and GGA (fix data) including altitude
+  GPS.sendCommand(PMTK_SET_NMEA_OUTPUT_RMCGGA);
+  // uncomment this line to turn on only the "minimum recommended" data
+  //GPS.sendCommand(PMTK_SET_NMEA_OUTPUT_RMCONLY);
+  // For parsing data, we don't suggest using anything but either RMC only or RMC+GGA since
+  // the parser doesn't care about other sentences at this time
+  
+  // Set the update rate
+  GPS.sendCommand(PMTK_SET_NMEA_UPDATE_1HZ);   // 1 Hz update rate
+  // For the parsing code to work nicely and have time to sort thru the data, and
+  // print it out we don't suggest using anything higher than 1 Hz
+
+  // Request updates on antenna status, comment out to keep quiet
+  GPS.sendCommand(PGCMD_ANTENNA);
+
+  // the nice thing about this code is you can have a timer0 interrupt go off
+  // every 1 millisecond, and read data from the GPS for you. that makes the
+  // loop code a heck of a lot easier!
+  useInterrupt(true);
+
+  delay(1000);
+  // Ask for firmware version
+  gps.println(PMTK_Q_RELEASE);
+}

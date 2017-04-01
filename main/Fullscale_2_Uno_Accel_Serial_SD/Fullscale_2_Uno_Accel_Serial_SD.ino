@@ -1,11 +1,11 @@
 
 /* Wiring:
   UNO     LIS331    SD BREAKOUT
-  5.0V  ---     <5V
-  3.3V    VCC         ---
-  GND     GND         GND
-  9   ---     <CS
-  10      CS      ---
+  5.0V  	---       <5V
+  3.3V    VCC       ---
+  GND     GND       GND
+  9   		---       <CS
+  10      CS        ---
   11      SDA/SDI   <DI
   12      SA0/SDO   >DO
   13      SCL/SPC   <CLK
@@ -17,11 +17,11 @@
 #include <SD.h>
 #include <SoftwareSerial.h>
 
+#define SSD    9   // Serial Select -> CS SD Breakout
 #define SS    10   // Serial Select -> CS on LIS331
 #define MOSI  11   // MasterOutSlaveIn -> SDI
 #define MISO  12   // MasterInSlaveOut -> SDO
 #define SCK   13   // Serial Clock -> SPC on LIS331
-#define SSD    9   // Serial Select -> CS SD Breakout
 
 #define SCALE 0.0007324; // approximate scale factor for full range (+/-24g)
 // scale factor: +/-24g = 48G range. 2^16 bits. 48/65536 = 0.0007324
@@ -32,23 +32,20 @@ double xAcc, yAcc, zAcc;
 // Global File object for SD writing
 File logFile;
 
-// Global SoftwareSerial object for Xbee communication
+// Global SoftwareSerial object for Xbee and GPS communication
 SoftwareSerial xbee(2,3); // RX, TX
-
+SoftwareSerial gps(5, 6); // TX, RX
 
 void setup()
 {
   // Configure Serial output (for debugging)
   Serial.begin(115200);
 
-  // Configure SD
   SD_SETUP();
 
-  // Configure SPI
   SPI_SETUP();
 
-  // Configure accelerometer
-  Accelerometer_Setup();
+  ACCEL_SETUP();
 
   // Configure Xbee SoftwareSerial port
   xbee.begin(9600);
@@ -59,19 +56,24 @@ void loop()
 {
   readVal(); // get acc values and put into global variables
 
-  // Output values to serial
+  outputSerial();
+
+  outputSD();
+
+  outputXbee();
+}
+
+void outputSerial(){
+	// Output values to serial
   Serial.print(xAcc, 1);
   Serial.print(",");
   Serial.print(yAcc, 1);
   Serial.print(",");
   Serial.println(zAcc, 1);
+}
 
-  //Output Values to SD
-  
-  // Switch SPI Buses
-  //digitalWrite(SSD, LOW);
-  
-  logFile = SD.open("log.csv", FILE_WRITE);
+void outputSD(){
+	logFile = SD.open("log.csv", FILE_WRITE);
 
   if (logFile) {
     logFile.print(millis(), 1);
@@ -83,8 +85,10 @@ void loop()
     logFile.println(zAcc, 1);
     logFile.close();
   }
+}
 
-  // Output to Xbee
+void outputXbee(){
+	// Output to Xbee
 	xbee.print(millis(), DEC);
   xbee.print(",");
   xbee.print(xAcc, DEC);
@@ -92,31 +96,27 @@ void loop()
   xbee.print(yAcc, DEC);
   xbee.print(",");
   xbee.println(zAcc, DEC);
-
-  digitalWrite(SSD,HIGH);
-
-  // delay(500);
 }
 
 // Read the accelerometer data and put values into global variables
 void readVal()
 {
-  byte xAddressByteL = 0x28; // Low Byte of X value (the first data register)
-  byte readBit = B10000000; // bit 0 (MSB) HIGH means read register
-  byte incrementBit = B01000000; // bit 1 HIGH means keep incrementing registers
+  byte xAddressByteL = 0x28; 			 // Low Byte of X value (the first data register)
+  byte readBit = B10000000;				 // bit 0 (MSB) HIGH means read register
+  byte incrementBit = B01000000;	 // bit 1 HIGH means keep incrementing registers
   // this allows us to keep reading the data registers by pushing an empty byte
   byte dataByte = xAddressByteL | readBit | incrementBit;
-  byte b0 = 0x0; // an empty byte, to increment to subsequent registers
+  byte b0 = 0x0; 									 // an empty byte, to increment to subsequent registers
 
-  digitalWrite(SS, LOW); // SS must be LOW to communicate
-  //  delay(1);
-  SPI.transfer(dataByte); // request a read, starting at X low byte
-  byte xL = SPI.transfer(b0); // get the low byte of X data
-  byte xH = SPI.transfer(b0); // get the high byte of X data
-  byte yL = SPI.transfer(b0); // get the low byte of Y data
-  byte yH = SPI.transfer(b0); // get the high byte of Y data
-  byte zL = SPI.transfer(b0); // get the low byte of Z data
-  byte zH = SPI.transfer(b0); // get the high byte of Z data
+  digitalWrite(SS, LOW); 					// SS must be LOW to communicate
+  //  delay(1); 									// Omitting hard delays
+  SPI.transfer(dataByte); 				// request a read, starting at X low byte
+  byte xL = SPI.transfer(b0); 		// get the low byte of X data
+  byte xH = SPI.transfer(b0); 		// get the high byte of X data
+  byte yL = SPI.transfer(b0); 		// get the low byte of Y data
+  byte yH = SPI.transfer(b0); 		// get the high byte of Y data
+  byte zL = SPI.transfer(b0); 		// get the low byte of Z data
+  byte zH = SPI.transfer(b0); 		// get the high byte of Z data
   //  delay(1);
   digitalWrite(SS, HIGH);
 
@@ -168,7 +168,7 @@ void SPI_SETUP()
   SPI.setClockDivider(SPI_CLOCK_DIV16); // SPI clock 1000Hz
 }
 
-void Accelerometer_Setup()
+void ACCEL_SETUP()
 {
   // Set up the accelerometer
   // write to Control register 1: address 20h
@@ -242,9 +242,6 @@ void SD_SETUP() {
     Serial.println("SD Card Initialization Failed!");
     return;
   }
-
-  // Sketchy as hell way to get random file name via live input
-  // delay((int) (analogRead(1) * 3 * ((analogRead(2))/512)));
 
   logFile = SD.open("log.csv", FILE_WRITE);
 
