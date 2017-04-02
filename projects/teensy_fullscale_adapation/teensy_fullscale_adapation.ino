@@ -9,10 +9,10 @@
   11      SDA/SDI    <DI            ---     ---
   12      SA0/SDO    >DO            ---     ---
   13      SCL/SPC    <CLK           ---     ---
-  2       ---        ---            RX      ---
-  3       ---        ---            ---     ---
-  5       ---        ---            ---     TX
-  6       ---        ---            ---     RX
+  0       ---        ---            RX      ---
+  1       ---        ---            TX      ---
+  31      ---        ---            ---     RX
+  32      ---        ---            ---     TX
 */
 
 #include <SPI.h>
@@ -112,13 +112,29 @@ void loop()
   outputXbee();
 }
 
+// Output values to serial
 void outputSerial(){
-  // Output values to serial
   Serial.print(xAcc, 1);
   Serial.print(",");
   Serial.print(yAcc, 1);
   Serial.print(",");
   Serial.println(zAcc, 1);
+  if (GPS.fix) {
+    Serial.print("Location: ");
+    Serial.print(GPS.latitude, 4); Serial.print(GPS.lat);
+    Serial.print(", ");
+    Serial.print(GPS.longitude, 4); Serial.print(GPS.lon);
+    Serial.print(GPS.latitudeDegrees, 4);
+    Serial.print(",");
+    Serial.print(GPS.longitudeDegrees, 4);
+    Serial.println((int)GPS.satellites);
+  }
+  else
+  {
+    Serial.print(0);
+    Serial.print(",");
+    Serial.println(0);
+  }
 }
 
 void outputSD(){
@@ -132,12 +148,30 @@ void outputSD(){
     logFile.print(yAcc, 1);
     logFile.print(",");
     logFile.println(zAcc, 1);
+    if (GPS.fix) {
+    	logFile.print("Location: ");
+    	logFile.print(GPS.latitude, 4); Serial.print(GPS.lat);
+    	logFile.print(", ");
+    	logFile.print(GPS.longitude, 4); Serial.print(GPS.lon);
+    	logFile.print(GPS.latitudeDegrees, 4);
+    	logFile.print(",");
+    	logFile.print(GPS.longitudeDegrees, 4);
+    	logFile.println((int)GPS.satellites);
+  	}
+  	else
+  	{
+    	logFile.print(0);
+    	logFile.print(",");
+    	logFile.println(0);
+  	}
     logFile.close();
   }
 }
 
+
+
+// Output to Xbee
 void outputXbee(){
-  // Output to Xbee
   xbee.print(millis(), DEC);
   xbee.print(",");
   xbee.print(xAcc, DEC);
@@ -145,6 +179,22 @@ void outputXbee(){
   xbee.print(yAcc, DEC);
   xbee.print(",");
   xbee.println(zAcc, DEC);
+  if (GPS.fix) {
+    xbee.print("Location: ");
+    xbee.print(GPS.latitude, 4); Serial.print(GPS.lat);
+    xbee.print(", ");
+    xbee.print(GPS.longitude, 4); Serial.print(GPS.lon);
+    xbee.print(GPS.latitudeDegrees, 4);
+    xbee.print(",");
+    xbee.print(GPS.longitudeDegrees, 4);
+    xbee.println((int)GPS.satellites);
+  }
+  else
+  {
+    xbee.print(0);
+    xbee.print(",");
+    xbee.println(0);
+  }
 }
 
 // Read the accelerometer data and put values into global variables

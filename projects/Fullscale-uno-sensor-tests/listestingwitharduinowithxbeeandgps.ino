@@ -207,10 +207,10 @@ void loop()
   if (GPS.fix) {
     xbee.print(GPS.latitudeDegrees, 4);
     xbee.print(","); 
-   xbee.println(GPS.longitudeDegrees, 4);
-     }
-     else
-     {
+    xbee.println(GPS.longitudeDegrees, 4);
+  }
+  else
+    {
       xbee.print(0);
       xbee.print(",");
       xbee.println(0);
