@@ -1,4 +1,3 @@
-
 /* Wiring:
   UNO     LIS331     SD Breakout    XBee    GPS
   5.0V    ---        <5V            ---     ---
@@ -102,8 +101,6 @@ uint32_t timer = millis();
 void loop()
 {
   readAccelVal(); // get acc values and put into global variables
-
-  redGPSVal(); // Get GPS data, need to implement
 
   // outputSerial();
 
