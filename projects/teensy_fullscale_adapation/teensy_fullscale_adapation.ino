@@ -21,11 +21,11 @@
 // #include <SoftwareSerial.h>
 #include <Adafruit_GPS.h>
 
-#define SSD    9   // Serial Select     -> CS   SD Breakout
-#define SS    10   // Serial Select 	  -> CS 	on LIS331
-#define MOSI  11   // MasterOutSlaveIn 	-> SDI  on Both
-#define MISO  12   // MasterInSlaveOut 	-> SDO  on Both
-#define SCK   13   // Serial Clock 		  -> SPC 	on Both
+#define SSD   BUILTIN_SDCARD  // Serial Select     -> CS   SD Breakout
+#define SS    10              // Serial Select 	  -> CS 	on LIS331
+#define MOSI  11              // MasterOutSlaveIn 	-> SDI  on Both
+#define MISO  12              // MasterInSlaveOut 	-> SDO  on Both
+#define SCK   13              // Serial Clock 		  -> SPC 	on Both
 
 // 'true' if you want to debug and listen to raw GPS sentances, else false
 #define GPSECHO  true
@@ -73,13 +73,11 @@ void setup()
   xbee.begin(9600);
 }
 
-// uint32_t timer = millis();
-
 void loop()
 {
   readAccelVal(); // get acc values and put into global variables
 
-  // outputSerial();
+  outputSerial();
 
   outputSD();
 
@@ -317,12 +315,12 @@ void Accelerometer_SETUP()
 // Initialize internal SD card and generate log.csv file
 void SD_SETUP() {
   // Configure SD Breakout on SSD pin
-  pinMode(BUILTIN_SDCARD, OUTPUT);
+  pinMode(SSD, OUTPUT);
 
   // Switch SPI to SD card
   //digitalWrite(SSD, LOW);
   
-  if (!SD.begin(BUILTIN_SDCARD)) {
+  if (!SD.begin(SSD)) {
     Serial.println("SD Card Initialization Failed!");
     return;
   }
