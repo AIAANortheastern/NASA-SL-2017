@@ -18,14 +18,14 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <SD.h>
-#include <SoftwareSerial.h>
+// #include <SoftwareSerial.h>
 #include <Adafruit_GPS.h>
 
-#define SSD    9   // Serial Select     -> CS   SD Breakout
-#define SS    10   // Serial Select 	  -> CS 	on LIS331
-#define MOSI  11   // MasterOutSlaveIn 	-> SDI  on Both
-#define MISO  12   // MasterInSlaveOut 	-> SDO  on Both
-#define SCK   13   // Serial Clock 		  -> SPC 	on Both
+#define SSD   BUILTIN_SDCARD  // Serial Select     -> CS   SD Breakout
+#define SS    10              // Serial Select 	  -> CS 	on LIS331
+#define MOSI  11              // MasterOutSlaveIn 	-> SDI  on Both
+#define MISO  12              // MasterInSlaveOut 	-> SDO  on Both
+#define SCK   13              // Serial Clock 		  -> SPC 	on Both
 
 // 'true' if you want to debug and listen to raw GPS sentances, else false
 #define GPSECHO  true
@@ -40,8 +40,12 @@ double xAcc, yAcc, zAcc;
 File logFile;
 
 // Global SoftwareSerial object for Xbee and GPS communication
-SoftwareSerial xbee(2,3); // RX, TX
-SoftwareSerial gps(5, 6); // TX, RX
+// SoftwareSerial xbee(2,3); // RX, TX
+// SoftwareSerial gps(5, 6); // TX, RX
+
+// Hardware Serial Alternatives
+HardwareSerial xbee = Serial1;
+HardwareSerial gps  = Serial4; 
 
 // GPS object
 Adafruit_GPS GPS(&gps);
@@ -69,40 +73,11 @@ void setup()
   xbee.begin(9600);
 }
 
-// Interrupt is called once a millisecond, looks for any new GPS data, and stores it
-SIGNAL(TIMER0_COMPA_vect) {
-  char c = GPS.read();
-  // if you want to debug, this is a good time to do it!
-  #ifdef UDR0
-    if (GPSECHO)
-      if (c) UDR0 = c;  
-         // writing direct to UDR0 is much much faster than Serial.print 
-        // but only one character can be written at a time. 
-  #endif
-}
-
-void useInterrupt(boolean v) {
-  if (v) {
-    // Timer0 is already used for millis() - we'll just interrupt somewhere
-    // in the middle and call the "Compare A" function above
-    OCR0A = 0xAF;
-    TIMSK0 |= _BV(OCIE0A);
-    usingInterrupt = true;
-  } else {
-    // do not call the interrupt function COMPA anymore
-    TIMSK0 &= ~_BV(OCIE0A);
-    usingInterrupt = false;
-  }
-}
-
-uint32_t timer = millis();
-
-
 void loop()
 {
   readAccelVal(); // get acc values and put into global variables
 
-  // outputSerial();
+  outputSerial();
 
   outputSD();
 
@@ -164,8 +139,6 @@ void outputSD(){
     logFile.close();
   }
 }
-
-
 
 // Output to Xbee
 void outputXbee(){
@@ -237,6 +210,7 @@ void readAccelVal()
   }
 }
 
+// Initialize SPI Coms for LIS 331 Sensor
 void SPI_SETUP()
 {
   pinMode(SS, OUTPUT);
@@ -274,6 +248,7 @@ void SPI_SETUP()
   SPI.setClockDivider(SPI_CLOCK_DIV16); // SPI clock 1000Hz
 }
 
+// Initialize LIS 331 and write correct setup settings
 void Accelerometer_SETUP()
 {
   // Set up the accelerometer
@@ -337,14 +312,15 @@ void Accelerometer_SETUP()
   digitalWrite(SS, HIGH);
 }
 
+// Initialize internal SD card and generate log.csv file
 void SD_SETUP() {
   // Configure SD Breakout on SSD pin
-  pinMode(9, OUTPUT);
+  pinMode(SSD, OUTPUT);
 
   // Switch SPI to SD card
   //digitalWrite(SSD, LOW);
   
-  if (!SD.begin(9)) {
+  if (!SD.begin(SSD)) {
     Serial.println("SD Card Initialization Failed!");
     return;
   }
@@ -362,6 +338,7 @@ void SD_SETUP() {
   digitalWrite(SSD, HIGH);
 }
 
+// Initialize GPS without using SoftwareSerial or Interupts
 void GPS_SETUP() {
   // 9600 NMEA is the default baud rate for Adafruit MTK GPS's- some use 4800
   GPS.begin(9600);
@@ -384,7 +361,7 @@ void GPS_SETUP() {
   // the nice thing about this code is you can have a timer0 interrupt go off
   // every 1 millisecond, and read data from the GPS for you. that makes the
   // loop code a heck of a lot easier!
-  useInterrupt(true);
+  // useInterrupt(true);
 
   delay(1000);
   // Ask for firmware version
