@@ -73,41 +73,7 @@ void setup()
   xbee.begin(9600);
 }
 
-/* 
- * Omit for Teensy 3.X compatibility  
- 
-// Interrupt is called once a millisecond, looks for any new GPS data, and stores it
-SIGNAL(TIMER0_COMPA_vect) {
-  char c = GPS.read();
-  // if you want to debug, this is a good time to do it!
-  #ifdef UDR0
-    if (GPSECHO)
-      if (c) UDR0 = c;  
-         // writing direct to UDR0 is much much faster than Serial.print 
-        // but only one character can be written at a time. 
-  #endif
-}
-
-
-
-void useInterrupt(boolean v) {
-  if (v) {
-    // Timer0 is already used for millis() - we'll just interrupt somewhere
-    // in the middle and call the "Compare A" function above
-    OCR0A = 0xAF;
-    TIMSK0 |= _BV(OCIE0A);
-    usingInterrupt = true;
-  } else {
-    // do not call the interrupt function COMPA anymore
-    TIMSK0 &= ~_BV(OCIE0A);
-    usingInterrupt = false;
-  }
-}
-
-*/
-
-uint32_t timer = millis();
-
+// uint32_t timer = millis();
 
 void loop()
 {
@@ -175,8 +141,6 @@ void outputSD(){
     logFile.close();
   }
 }
-
-
 
 // Output to Xbee
 void outputXbee(){
@@ -248,6 +212,7 @@ void readAccelVal()
   }
 }
 
+// Initialize SPI Coms for LIS 331 Sensor
 void SPI_SETUP()
 {
   pinMode(SS, OUTPUT);
@@ -285,6 +250,7 @@ void SPI_SETUP()
   SPI.setClockDivider(SPI_CLOCK_DIV16); // SPI clock 1000Hz
 }
 
+// Initialize LIS 331 and write correct setup settings
 void Accelerometer_SETUP()
 {
   // Set up the accelerometer
@@ -348,6 +314,7 @@ void Accelerometer_SETUP()
   digitalWrite(SS, HIGH);
 }
 
+// Initialize internal SD card and generate log.csv file
 void SD_SETUP() {
   // Configure SD Breakout on SSD pin
   pinMode(BUILTIN_SDCARD, OUTPUT);
@@ -373,6 +340,7 @@ void SD_SETUP() {
   digitalWrite(SSD, HIGH);
 }
 
+// Initialize GPS without using SoftwareSerial or Interupts
 void GPS_SETUP() {
   // 9600 NMEA is the default baud rate for Adafruit MTK GPS's- some use 4800
   GPS.begin(9600);
