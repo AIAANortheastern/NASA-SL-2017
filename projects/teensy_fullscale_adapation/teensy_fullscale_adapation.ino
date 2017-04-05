@@ -18,7 +18,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <SD.h>
-#include <SoftwareSerial.h>
+// #include <SoftwareSerial.h>
 #include <Adafruit_GPS.h>
 
 #define SSD    9   // Serial Select     -> CS   SD Breakout
@@ -40,8 +40,12 @@ double xAcc, yAcc, zAcc;
 File logFile;
 
 // Global SoftwareSerial object for Xbee and GPS communication
-SoftwareSerial xbee(2,3); // RX, TX
-SoftwareSerial gps(5, 6); // TX, RX
+// SoftwareSerial xbee(2,3); // RX, TX
+// SoftwareSerial gps(5, 6); // TX, RX
+
+// Hardware Serial Alternatives
+HardwareSerial xbee = Serial1;
+HardwareSerial gps  = Serial4; 
 
 // GPS object
 Adafruit_GPS GPS(&gps);
@@ -69,6 +73,9 @@ void setup()
   xbee.begin(9600);
 }
 
+/* 
+ * Omit for Teensy 3.X compatibility  
+ 
 // Interrupt is called once a millisecond, looks for any new GPS data, and stores it
 SIGNAL(TIMER0_COMPA_vect) {
   char c = GPS.read();
@@ -80,6 +87,8 @@ SIGNAL(TIMER0_COMPA_vect) {
         // but only one character can be written at a time. 
   #endif
 }
+
+
 
 void useInterrupt(boolean v) {
   if (v) {
@@ -94,6 +103,8 @@ void useInterrupt(boolean v) {
     usingInterrupt = false;
   }
 }
+
+*/
 
 uint32_t timer = millis();
 
@@ -339,12 +350,12 @@ void Accelerometer_SETUP()
 
 void SD_SETUP() {
   // Configure SD Breakout on SSD pin
-  pinMode(9, OUTPUT);
+  pinMode(BUILTIN_SDCARD, OUTPUT);
 
   // Switch SPI to SD card
   //digitalWrite(SSD, LOW);
   
-  if (!SD.begin(9)) {
+  if (!SD.begin(BUILTIN_SDCARD)) {
     Serial.println("SD Card Initialization Failed!");
     return;
   }
@@ -384,7 +395,7 @@ void GPS_SETUP() {
   // the nice thing about this code is you can have a timer0 interrupt go off
   // every 1 millisecond, and read data from the GPS for you. that makes the
   // loop code a heck of a lot easier!
-  useInterrupt(true);
+  // useInterrupt(true);
 
   delay(1000);
   // Ask for firmware version
