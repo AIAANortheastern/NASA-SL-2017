@@ -43,17 +43,17 @@ void setup() {
     randomSeed((analogRead(3)) * (analogRead(4)) - (analogRead(5)));
     current_csv_name = String(random(0,100000)) + ".csv";
     
-    //Serial.begin(115200);
+    Serial.begin(115200);
 
     /*while (!Serial) {
         ; // wait for serial port to connect. Needed for native USB port only
     }*/
 
     if (!SD.begin(sdCardCS)) {
-        //Serial.println("failed!");
-        return;
+        Serial.println("failed!");
+        //return;
     }
-    //Serial.println("done.");
+    Serial.println("done.");
 
     /* Initialise the sensors */
     if(!accel.begin())
@@ -122,7 +122,7 @@ void loop() {
     }
 
     //Serial.println(current_csv_name);
-    //Serial.println(outline);
+    Serial.println(outline);
 
     delay(100);
 }

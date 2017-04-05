@@ -12,8 +12,8 @@ import enum
 import time
 
 DELIMETER = b"^"
-ENDBYTE = b';'
-STARTBYTE = b"/"
+ENDBYTE = b','
+STARTBYTE = b"\n"
 
 
 class LivePlot:
@@ -139,13 +139,19 @@ def establish_serial(baud_rate=None, serial_path=None):
             print("Entered baud rate was not a number, please try again")
 
     ports = list_ports.comports()
-    for p in ports:
+    a = list(enumerate(ports))
+    c = {}
+    for i, p in a:
+        c[i] = p
+        print(i, end=' ')
         print(p)
-
+    b = input("Which port: ")
+    t = str(c[int(b)]).split(' ')[0]
+    print(t)
     # TODO handle input from user to determine serial path
     serial_path = '/dev/something'
 
-    return BeeConnection(serial_path, baud_rate)
+    return BeeConnection('COM8', baud_rate)
 
 
 class ParserStates(enum.Enum):
@@ -306,8 +312,7 @@ class BeeConnection:
         a second and tries again. If the connection still is not established
         after 10 such additional attempts, raises ConnectionError
         '''
-        self._connection = serial.Serial(serial_path, baud_rate, timeout)
-
+        self._connection = serial.Serial(serial_path, baud_rate, timeout=timeout)
         attempts = 0
         while not self._connection.isOpen():
             if attempts == 10:
@@ -347,7 +352,9 @@ class BeeConnection:
         try:
             if self._connection.inWaiting():
                 new_data = self._connection.read()
-                for char in new_data:
+                print(new_data)
+                for char in [new_data]:
+                    print(char)
                     self._parser.feed(char)
 
                     if self._parser.state == ParserStates.ERROR_STATE:
@@ -357,6 +364,8 @@ class BeeConnection:
                         self._parser.reset()
                     else:
                         pass
+            else:
+                print("d")
 
 
 
@@ -365,6 +374,12 @@ class BeeConnection:
 
     def __iter__(self):
         return self
+
+#s = serial.Serial('COM3', 9600,timeout=1)
+b = BeeConnection('COM3',9600)
+for i in b:
+    print(i)
+    pass#print(list(i))
 
 
 ###################################################################################
