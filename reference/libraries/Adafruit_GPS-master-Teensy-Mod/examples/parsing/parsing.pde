@@ -12,7 +12,7 @@
 // and help support open source hardware & software! -ada
 
 #include <Adafruit_GPS.h>
-#include <SoftwareSerial.h>
+// #include <SoftwareSerial.h>
 
 // If you're using a GPS module:
 // Connect the GPS Power pin to 5V
@@ -30,13 +30,13 @@
 
 // If using software serial, keep this line enabled
 // (you can change the pin numbers to match your wiring):
-SoftwareSerial mySerial(3, 2);
+// SoftwareSerial mySerial(3, 2);
 
 // If using hardware serial (e.g. Arduino Mega), comment out the
 // above SoftwareSerial line, and enable this line instead
 // (you can change the Serial number to match your wiring):
 
-//HardwareSerial mySerial = Serial1;
+HardwareSerial mySerial = Serial1;
 
 
 Adafruit_GPS GPS(&mySerial);
@@ -94,9 +94,12 @@ SIGNAL(TIMER0_COMPA_vect) {
   // if you want to debug, this is a good time to do it!
 #ifdef UDR0
   if (GPSECHO)
-    if (c) UDR0 = c;  
-    // writing direct to UDR0 is much much faster than Serial.print 
-    // but only one character can be written at a time. 
+    // if (c) UDR0 = c;  
+    //   writing direct to UDR0 is much much faster than Serial.print 
+    //   but only one character can be written at a time. 
+    // However this isn't working with the Teensy so....
+    // Let us avoid the UDR0 magic
+    if (c) Serial.print(c);
 #endif
 }
 
